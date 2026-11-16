@@ -1,12 +1,18 @@
 
 /*
- RENTPLAY PH — CINEMATIC EDITION V1
+ RENTPLAY PH — CINEMATIC EDITION V2
  Customer Website
- Standalone demo — Firebase integration follows.
 
- IMPORTANT:
- Add your Facebook Page URL in CONFIG.
- Demo availability is not live rental data.
+ V2:
+ - Game cover image URLs
+ - Featured banner images
+ - Search and filters
+ - Favorites
+ - Trophy / Non-Trophy availability
+ - View Details
+ - Rental inquiry
+
+ Firebase is not connected yet.
 */
 
 "use strict";
@@ -16,16 +22,6 @@ const CONFIG = {
   unliSwapMonthly: 850,
   currency: "PHP"
 };
-
-/*
- GAME CATALOG
-
- Images can be added using public HTTPS URLs.
- Leave image blank to use cinematic gradient artwork.
-
- Prices and availability below are DEMO values.
- Update from Firebase before accepting live rentals.
-*/
 
 const GAMES = [
   {
@@ -39,7 +35,8 @@ const GAMES = [
     month: 500,
     trophy: true,
     nonTrophy: true,
-    image: "",
+    image:
+      "https://images.igdb.com/igdb/image/upload/t_cover_big/co6jtx.jpg",
     colors: ["#23446c", "#111525", "#8a3548"],
     featured: true,
     requests: 12
@@ -55,7 +52,8 @@ const GAMES = [
     month: 500,
     trophy: true,
     nonTrophy: true,
-    image: "",
+    image:
+      "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg",
     colors: ["#42515a", "#10151c", "#354c60"],
     featured: true,
     requests: 8
@@ -71,7 +69,8 @@ const GAMES = [
     month: 800,
     trophy: false,
     nonTrophy: false,
-    image: "",
+    image:
+      "https://images.igdb.com/igdb/image/upload/t_cover_big/co4j8w.jpg",
     colors: ["#75501b", "#17120f", "#5c2321"],
     featured: true,
     requests: 20
@@ -87,7 +86,8 @@ const GAMES = [
     month: 800,
     trophy: false,
     nonTrophy: false,
-    image: "",
+    image:
+      "https://images.igdb.com/igdb/image/upload/t_cover_big/co9b5k.jpg",
     colors: ["#633b32", "#151018", "#68211e"],
     featured: true,
     requests: 16
@@ -113,6 +113,7 @@ function loadFavorites() {
     const saved = JSON.parse(
       localStorage.getItem("rentplayFavorites") || "[]"
     );
+
     return Array.isArray(saved) ? saved : [];
   } catch {
     return [];
@@ -159,7 +160,11 @@ function gameBackground(game) {
       .replace(/\(/g, "%28")
       .replace(/\)/g, "%29");
 
-    return `linear-gradient(0deg,rgba(0,0,0,.35),transparent),url("${safeURL}")`;
+    return `linear-gradient(
+      0deg,
+      rgba(0,0,0,.35),
+      transparent
+    ),url("${safeURL}")`;
   }
 
   const colors = game.colors || [
@@ -168,8 +173,16 @@ function gameBackground(game) {
     "#25314b"
   ];
 
-  return `radial-gradient(circle at 78% 18%,${colors[0]},transparent 65%),
-          linear-gradient(135deg,${colors[1]},${colors[2]})`;
+  return `radial-gradient(
+      circle at 78% 18%,
+      ${colors[0]},
+      transparent 65%
+    ),
+    linear-gradient(
+      135deg,
+      ${colors[1]},
+      ${colors[2]}
+    )`;
 }
 
 function gameArt(game) {
@@ -228,12 +241,18 @@ function gameCard(game) {
         <h3>${escapeHTML(game.title)}</h3>
 
         <span class="status ${available ? "available" : "rented"}">
-          ${available ? "● Available Now" : "● Currently Rented"}
+          ${available
+            ? "● Available Now"
+            : "● Currently Rented"}
         </span>
 
         <div class="prices">
-          <span><strong>${peso(game.week)}</strong> / Week</span>
-          <span><strong>${peso(game.month)}</strong> / Month</span>
+          <span>
+            <strong>${peso(game.week)}</strong> / Week
+          </span>
+          <span>
+            <strong>${peso(game.month)}</strong> / Month
+          </span>
         </div>
 
         <button
@@ -275,7 +294,8 @@ function filteredGames() {
         break;
 
       case "favorites":
-        matchesFilter = state.favorites.includes(game.id);
+        matchesFilter =
+          state.favorites.includes(game.id);
         break;
 
       case "rpg":
@@ -299,13 +319,19 @@ function renderGames() {
   container.innerHTML = games.map(gameCard).join("");
 
   const count = $("#gameCount");
+
   if (count) {
     count.textContent =
-      `${games.length} ${games.length === 1 ? "Game" : "Games"}`;
+      `${games.length} ${
+        games.length === 1 ? "Game" : "Games"
+      }`;
   }
 
   const empty = $("#emptyState");
-  if (empty) empty.hidden = games.length > 0;
+
+  if (empty) {
+    empty.hidden = games.length > 0;
+  }
 }
 
 function toggleFavorite(id) {
@@ -338,8 +364,13 @@ function renderHero() {
     art.style.backgroundImage = gameBackground(game);
   }
 
-  if (title) title.textContent = game.title;
-  if (desc) desc.textContent = game.description;
+  if (title) {
+    title.textContent = game.title;
+  }
+
+  if (desc) {
+    desc.textContent = game.description;
+  }
 
   if (dots) {
     dots.innerHTML = FEATURED.map((item, index) => `
@@ -366,8 +397,12 @@ function slotMarkup(name, available) {
   return `
     <div class="slot">
       <b>${escapeHTML(name)}</b>
-      <span style="color:${available ? "#42f5a1" : "#ff6974"}">
-        ${available ? "● Available Now" : "● Currently Rented"}
+      <span style="color:${
+        available ? "#42f5a1" : "#ff6974"
+      }">
+        ${available
+          ? "● Available Now"
+          : "● Currently Rented"}
       </span>
     </div>
   `;
@@ -397,20 +432,31 @@ function openDetails(id) {
         font-style:italic;
         line-height:1.1;
         text-shadow:0 4px 20px #000;
-      ">${escapeHTML(game.title)}</div>
+      ">
+        ${escapeHTML(game.title)}
+      </div>
     `;
 
   body.innerHTML = `
     <div
       class="modal-cover"
-      style="background-image:${gameBackground(game)};position:relative"
+      style="
+        background-image:${gameBackground(game)};
+        position:relative
+      "
     >
       ${coverText}
     </div>
 
     <div class="modal-info">
-      <span class="kicker">${escapeHTML(game.genre)} · PS5 DIGITAL</span>
-      <h2 id="modalTitle">${escapeHTML(game.title)}</h2>
+      <span class="kicker">
+        ${escapeHTML(game.genre)} · PS5 DIGITAL
+      </span>
+
+      <h2 id="modalTitle">
+        ${escapeHTML(game.title)}
+      </h2>
+
       <p>${escapeHTML(game.description)}</p>
 
       <h3>Rental Availability</h3>
@@ -437,8 +483,12 @@ function openDetails(id) {
         <label>
           Account Type
           <select id="rentalSlot" required>
-            <option value="Trophy">Trophy</option>
-            <option value="Non-Trophy">Non-Trophy</option>
+            <option value="Trophy">
+              Trophy
+            </option>
+            <option value="Non-Trophy">
+              Non-Trophy
+            </option>
           </select>
         </label>
 
@@ -452,14 +502,16 @@ function openDetails(id) {
           </select>
         </label>
 
-        <div class="full" id="rentalSummary"
-             style="
-               background:#0d1017;
-               border:1px solid #454853;
-               border-radius:10px;
-               padding:14px;
-             ">
-        </div>
+        <div
+          class="full"
+          id="rentalSummary"
+          style="
+            background:#0d1017;
+            border:1px solid #454853;
+            border-radius:10px;
+            padding:14px;
+          "
+        ></div>
 
         <button
           type="submit"
@@ -470,9 +522,9 @@ function openDetails(id) {
       </form>
 
       <p class="notice">
-        Prices and availability shown are demo data until
-        live Firebase sync is enabled. Booking is subject
-        to confirmation.
+        Prices and availability shown are demo
+        data until live Firebase sync is enabled.
+        Booking is subject to confirmation.
       </p>
     </div>
   `;
@@ -501,7 +553,9 @@ function openDetails(id) {
 function closeDetails() {
   const modal = $("#modal");
 
-  if (modal) modal.hidden = true;
+  if (modal) {
+    modal.hidden = true;
+  }
 
   document.body.style.overflow = "";
   state.currentGame = null;
@@ -530,11 +584,16 @@ function updateRentalSummary() {
   const game = state.currentGame;
   if (!game) return;
 
-  const slot = $("#rentalSlot")?.value || "Trophy";
-  const period = $("#rentalPeriod")?.value || "1 Week";
+  const slot =
+    $("#rentalSlot")?.value || "Trophy";
+
+  const period =
+    $("#rentalPeriod")?.value || "1 Week";
 
   const available =
-    slot === "Trophy" ? game.trophy : game.nonTrophy;
+    slot === "Trophy"
+      ? game.trophy
+      : game.nonTrophy;
 
   const price = getSelectedPrice(game, period);
 
@@ -551,8 +610,12 @@ function updateRentalSummary() {
       Slot: ${escapeHTML(slot)}<br>
       Period: ${escapeHTML(period)}<br>
       Availability:
-      <strong style="color:${available ? "#42f5a1" : "#ff6974"}">
-        ${available ? "Available Now" : "Currently Rented"}
+      <strong style="color:${
+        available ? "#42f5a1" : "#ff6974"
+      }">
+        ${available
+          ? "Available Now"
+          : "Currently Rented"}
       </strong>
     </div>
 
@@ -562,7 +625,9 @@ function updateRentalSummary() {
       font-weight:900;
       color:white;
     ">
-      ${price === null ? "Price to be confirmed" : peso(price)}
+      ${price === null
+        ? "Price to be confirmed"
+        : peso(price)}
     </div>
 
     <small style="color:#a5a8b5">
@@ -572,7 +637,9 @@ function updateRentalSummary() {
     </small>
   `;
 
-  const button = $("#bookingForm button[type='submit']");
+  const button = $(
+    "#bookingForm button[type='submit']"
+  );
 
   if (button) {
     button.textContent = available
@@ -581,11 +648,21 @@ function updateRentalSummary() {
   }
 }
 
-function createBookingMessage(game, name, slot, period) {
+function createBookingMessage(
+  game,
+  name,
+  slot,
+  period
+) {
   const available =
-    slot === "Trophy" ? game.trophy : game.nonTrophy;
+    slot === "Trophy"
+      ? game.trophy
+      : game.nonTrophy;
 
-  const price = getSelectedPrice(game, period);
+  const price = getSelectedPrice(
+    game,
+    period
+  );
 
   const lines = [
     "Hello RENTPLAY PH! 🎮",
@@ -598,7 +675,11 @@ function createBookingMessage(game, name, slot, period) {
     `Game: ${game.title}`,
     `Account Type: ${slot}`,
     `Rental Period: ${period}`,
-    `Estimated Price: ${price === null ? "To be confirmed" : peso(price)}`,
+    `Estimated Price: ${
+      price === null
+        ? "To be confirmed"
+        : peso(price)
+    }`,
     "",
     "My name matches my Facebook account.",
     "",
@@ -621,7 +702,9 @@ async function submitBooking(event) {
   const period = $("#rentalPeriod")?.value;
 
   if (!name || !slot || !period) {
-    alert("Please complete your rental details.");
+    alert(
+      "Please complete your rental details."
+    );
     return;
   }
 
@@ -632,26 +715,29 @@ async function submitBooking(event) {
     period
   );
 
-  /*
-    Messenger does not reliably support prefilled
-    text in every browser.
-
-    Copy the inquiry first, then open the Page.
-  */
-
   let copied = false;
 
   try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(message);
+    if (
+      navigator.clipboard &&
+      window.isSecureContext
+    ) {
+      await navigator.clipboard.writeText(
+        message
+      );
       copied = true;
     }
   } catch (error) {
-    console.warn("Clipboard permission unavailable.", error);
+    console.warn(
+      "Clipboard permission unavailable.",
+      error
+    );
   }
 
   if (!copied) {
-    const field = document.createElement("textarea");
+    const field =
+      document.createElement("textarea");
+
     field.value = message;
     field.style.position = "fixed";
     field.style.opacity = "0";
@@ -697,99 +783,159 @@ async function submitBooking(event) {
 }
 
 function setupEvents() {
-  $("#search")?.addEventListener("input", event => {
-    state.search = event.target.value.trim();
-    renderGames();
-  });
+  $("#search")?.addEventListener(
+    "input",
+    event => {
+      state.search =
+        event.target.value.trim();
 
-  $("#filters")?.addEventListener("click", event => {
-    const button = event.target.closest("[data-filter]");
-    if (!button) return;
+      renderGames();
+    }
+  );
 
-    state.filter = button.dataset.filter;
+  $("#filters")?.addEventListener(
+    "click",
+    event => {
+      const button =
+        event.target.closest("[data-filter]");
 
-    $$("#filters .chip").forEach(chip => {
-      chip.classList.toggle(
-        "active",
-        chip === button
+      if (!button) return;
+
+      state.filter =
+        button.dataset.filter;
+
+      $$("#filters .chip").forEach(
+        chip => {
+          chip.classList.toggle(
+            "active",
+            chip === button
+          );
+        }
       );
-    });
 
-    renderGames();
-  });
-
-  document.addEventListener("click", event => {
-    const favorite = event.target.closest("[data-favorite]");
-
-    if (favorite) {
-      toggleFavorite(favorite.dataset.favorite);
-      return;
+      renderGames();
     }
+  );
 
-    const details = event.target.closest("[data-details]");
+  document.addEventListener(
+    "click",
+    event => {
+      const favorite =
+        event.target.closest(
+          "[data-favorite]"
+        );
 
-    if (details) {
-      openDetails(details.dataset.details);
-      return;
+      if (favorite) {
+        toggleFavorite(
+          favorite.dataset.favorite
+        );
+        return;
+      }
+
+      const details =
+        event.target.closest(
+          "[data-details]"
+        );
+
+      if (details) {
+        openDetails(
+          details.dataset.details
+        );
+        return;
+      }
+
+      const heroDot =
+        event.target.closest(
+          "[data-hero]"
+        );
+
+      if (heroDot) {
+        state.heroIndex = Number(
+          heroDot.dataset.hero
+        );
+
+        renderHero();
+        return;
+      }
+
+      if (
+        event.target.closest(
+          "[data-close]"
+        )
+      ) {
+        closeDetails();
+      }
     }
+  );
 
-    const heroDot = event.target.closest("[data-hero]");
+  $("#heroDetails")?.addEventListener(
+    "click",
+    () => {
+      const game =
+        FEATURED[state.heroIndex];
 
-    if (heroDot) {
-      state.heroIndex = Number(heroDot.dataset.hero);
-      renderHero();
-      return;
+      if (game) {
+        openDetails(game.id);
+      }
     }
+  );
 
-    if (event.target.closest("[data-close]")) {
-      closeDetails();
-    }
-  });
+  $("#prevHero")?.addEventListener(
+    "click",
+    () => changeHero(-1)
+  );
 
-  $("#heroDetails")?.addEventListener("click", () => {
-    const game = FEATURED[state.heroIndex];
-    if (game) openDetails(game.id);
-  });
-
-  $("#prevHero")?.addEventListener("click", () => {
-    changeHero(-1);
-  });
-
-  $("#nextHero")?.addEventListener("click", () => {
-    changeHero(1);
-  });
+  $("#nextHero")?.addEventListener(
+    "click",
+    () => changeHero(1)
+  );
 
   $("#closeModal")?.addEventListener(
     "click",
     closeDetails
   );
 
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape") {
-      closeDetails();
+  document.addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Escape") {
+        closeDetails();
+      }
     }
-  });
+  );
 
-  const menuToggle = $("#menuToggle");
+  const menuToggle =
+    $("#menuToggle");
+
   const nav = $("#nav");
 
-  menuToggle?.addEventListener("click", () => {
-    const opened = nav?.classList.toggle("open");
+  menuToggle?.addEventListener(
+    "click",
+    () => {
+      const opened =
+        nav?.classList.toggle("open");
 
-    menuToggle.setAttribute(
-      "aria-expanded",
-      String(Boolean(opened))
-    );
-  });
+      menuToggle.setAttribute(
+        "aria-expanded",
+        String(Boolean(opened))
+      );
+    }
+  );
 
   $$("#nav a").forEach(link => {
-    link.addEventListener("click", () => {
-      nav?.classList.remove("open");
-      menuToggle?.setAttribute(
-        "aria-expanded",
-        "false"
-      );
-    });
+    link.addEventListener(
+      "click",
+      () => {
+        nav?.classList.remove(
+          "open"
+        );
+
+        menuToggle?.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+      }
+    );
   });
 }
 
@@ -797,7 +943,8 @@ function initRentPlay() {
   const year = $("#year");
 
   if (year) {
-    year.textContent = new Date().getFullYear();
+    year.textContent =
+      new Date().getFullYear();
   }
 
   renderHero();
@@ -806,11 +953,13 @@ function initRentPlay() {
   setupEvents();
 
   console.log(
-    "RENTPLAY PH Cinematic Edition V1 loaded."
+    "RENTPLAY PH Cinematic Edition V2 loaded."
   );
 }
 
-if (document.readyState === "loading") {
+if (
+  document.readyState === "loading"
+) {
   document.addEventListener(
     "DOMContentLoaded",
     initRentPlay
@@ -818,4 +967,3 @@ if (document.readyState === "loading") {
 } else {
   initRentPlay();
 }
-
