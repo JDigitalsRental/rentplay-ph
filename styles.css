@@ -380,3 +380,8 @@ body{background:radial-gradient(ellipse 75% 28% at 50% 0%,#2b101a 0%,transparent
 .rp-confirm-manual{display:block;width:100%;height:105px;margin-top:10px;background:#0d1017;color:#fff;border:1px solid #656a75;border-radius:8px;padding:9px;font-size:12px}
 @media(max-width:480px){.rp-confirm-overlay{padding:8px}.rp-confirm-card{padding:21px 17px;max-height:calc(100dvh - 16px);border-radius:16px}.rp-confirm-details{padding:13px}.rp-confirm-card h2{font-size:31px}}
 @media(prefers-reduced-motion:reduce){.rp-confirm-overlay *{scroll-behavior:auto!important}}
+/* RENTPLAY PH shared waiting-list & prices */
+.game-content .prices .rp-starting{font-weight:850;color:#fff;font-size:clamp(11px,1.3vw,15px)}
+.game-content .prices .rp-wait-count{font-size:11px;color:#e0b5c0;line-height:1.45}
+#modal .slot-row .slot b{overflow-wrap:anywhere}
+#bookingForm button:disabled{opacity:.65;cursor:wait}
