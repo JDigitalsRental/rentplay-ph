@@ -1,4 +1,3 @@
-
 /*
  RENTPLAY PH — CINEMATIC EDITION V2
  Customer Website
@@ -19,80 +18,104 @@
 
 const CONFIG = {
   facebookPage: "",
-  unliSwapMonthly: 850,
+  // Rental prices are defined in RENTPLAY_PRICES / RENTPLAY_UNLI_SWAP,
   currency: "PHP"
 };
 
-const GAMES = [
-  {
-    id: "ff7",
-    title: "Final Fantasy VII Rebirth",
-    genre: "RPG",
-    description:
-      "Embark on an unforgettable adventure across a vast world filled with exploration, memorable characters, and exciting battles.",
-    week: 250,
-    twoWeeks: null,
-    month: 500,
-    trophy: true,
-    nonTrophy: true,
-    image:
-      "https://images.igdb.com/igdb/image/upload/t_cover_big/co6jtx.jpg",
-    colors: ["#23446c", "#111525", "#8a3548"],
-    featured: true,
-    requests: 12
-  },
-  {
-    id: "witcher3",
-    title: "The Witcher 3: Wild Hunt – Remastered",
-    genre: "Adventure",
-    description:
-      "Explore a massive fantasy world filled with monsters, meaningful choices, and unforgettable quests.",
-    week: 250,
-    twoWeeks: null,
-    month: 500,
-    trophy: true,
-    nonTrophy: true,
-    image:
-      "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg",
-    colors: ["#42515a", "#10151c", "#354c60"],
-    featured: true,
-    requests: 8
-  },
-  {
-    id: "wolverine",
-    title: "Marvel's Wolverine",
-    genre: "Action",
-    description:
-      "Discover an intense action adventure featuring Wolverine in a thrilling cinematic experience.",
-    week: 350,
-    twoWeeks: null,
-    month: 800,
-    trophy: false,
-    nonTrophy: false,
-    image:
-      "https://images.igdb.com/igdb/image/upload/t_cover_big/co4j8w.jpg",
-    colors: ["#75501b", "#17120f", "#5c2321"],
-    featured: true,
-    requests: 20
-  },
-  {
-    id: "onimusha",
-    title: "Onimusha: Way of the Sword",
-    genre: "Action",
-    description:
-      "Enter a dark samurai adventure featuring fierce sword combat and supernatural enemies.",
-    week: 350,
-    twoWeeks: null,
-    month: 800,
-    trophy: false,
-    nonTrophy: false,
-    image:
-      "https://images.igdb.com/igdb/image/upload/t_cover_big/co9b5k.jpg",
-    colors: ["#633b32", "#151018", "#68211e"],
-    featured: true,
-    requests: 16
+// Populated from the shared public Firestore catalog; never use demo availability.
+let GAMES = [];
+let FEATURED = [];
+let catalogReady = false;
+let catalogError = false;
+let latestWaitingCounts = {};
+
+// RENTPLAY-only prices. Key by Firestore document ID OR normalized game title.
+// Enter actual RENTPLAY PH rates here; null means "Price to be confirmed".
+// Each slot can have different prices. These values never write to JDigitalsRental.
+const RENTPLAY_PRICES = {
+  // Example (replace with actual approved prices):
+  // "ff7": {
+  //   trophy: {week: null, twoWeeks: null, month: null, unliSwap: null},
+  //   nonTrophy: {week: null, twoWeeks: null, month: null, unliSwap: null}
+  // }
+};
+const RENTPLAY_UNLI_SWAP = {
+  trophy: null, // enter RENTPLAY monthly Trophy UNLI SWAP rate
+  nonTrophy: null // enter RENTPLAY monthly Non-Trophy UNLI SWAP rate
+};
+function normalizedTitle(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+function slotRented(data, slot) {
+  const trophy = slot === "trophy";
+  const status = data[trophy ? "trophyStatus" : "nonTrophyStatus"] ?? data[trophy ? "trophyRented" : "nonTrophyRented"];
+  if (typeof status === "boolean") return status;
+  if (typeof status === "string") {
+    const s = status.trim().toLowerCase();
+    if (["available", "available now", "false", "open", "vacant"].includes(s)) return false;
+    if (["rented", "currently rented", "currently-rented", "true"].includes(s)) return true;
   }
-];
+  const date = String(data[trophy ? "trophyDate" : "nonTrophyDate"] || "").trim();
+  if (/^(available now|available)$/i.test(date)) return false;
+  return String(data.status || "").toLowerCase() === "currently-rented";
+}
+function liveGame(doc) {
+  const data = doc.data();
+  const title = String(data.name || data.title || "Untitled Game");
+  const priceConfig = RENTPLAY_PRICES[doc.id] || RENTPLAY_PRICES[normalizedTitle(title)] || {};
+  const genre = String(data.genre || data.type || "Other");
+  const image = String(data.image || "");
+  return {
+    id: doc.id, title, genre,
+    description: String(data.description || data.meta || "PS5 digital game rental"),
+    image: /^https:\/\//i.test(image) ? image : (image && !/^(javascript:|data:)/i.test(image) ? new URL(image, document.baseURI).href : ""),
+    colors: ["#23446c", "#111525", "#8a3548"],
+    trophy: !slotRented(data, "trophy"),
+    nonTrophy: !slotRented(data, "nonTrophy"),
+    slotPrices: priceConfig,
+    featured: data.featured !== false,
+    requests: 0
+  };
+}
+function onLiveGames(docs) {
+  GAMES = docs.filter(d => String(d.data().status || "").toLowerCase() !== "upcoming").map(liveGame);
+  catalogReady = true;
+  catalogError = false;
+  applyWaitingCounts();
+}
+function applyWaitingCounts() {
+  for (const game of GAMES) {
+    const count = latestWaitingCounts[game.title] || latestWaitingCounts[game.id] || {};
+    game.requests = (Number(count.trophy) || 0) + (Number(count.nonTrophy) || 0);
+  }
+  refreshLiveView();
+}
+function onLiveWaitingList(counts) {
+  latestWaitingCounts = counts;
+  applyWaitingCounts();
+}
+function refreshLiveView() {
+  FEATURED = GAMES.filter(game => game.featured);
+  if (state.heroIndex >= FEATURED.length) state.heroIndex = 0;
+  renderHero(); renderTrending(); renderGames();
+  if (state.currentGame) {
+    const updated = GAMES.find(g => g.id === state.currentGame.id);
+    if (updated) {
+      state.currentGame = updated;
+      // Update visible summary without resetting user-entered booking fields.
+      if (document.querySelector("#rentalSummary")) updateRentalSummary();
+    }
+  }
+}
+window.addEventListener("rentplay:games", event => onLiveGames(event.detail));
+window.addEventListener("rentplay:waiting", event => onLiveWaitingList(event.detail));
+window.addEventListener("rentplay:error", () => {
+  catalogError = true;
+  if (!catalogReady) {
+    const el = document.querySelector("#emptyState");
+    if (el) { el.hidden = false; el.textContent = "Unable to load live games. Please try again later."; }
+  }
+});
 
 const $ = (selector, root = document) =>
   root.querySelector(selector);
@@ -247,12 +270,8 @@ function gameCard(game) {
         </span>
 
         <div class="prices">
-          <span>
-            <strong>${peso(game.week)}</strong> / Week
-          </span>
-          <span>
-            <strong>${peso(game.month)}</strong> / Month
-          </span>
+          <span>🏆 Trophy / 🎮 Non-Trophy</span>
+          <span>See separate prices in View Details</span>
         </div>
 
         <button
@@ -272,6 +291,7 @@ function renderTrending() {
   if (!container) return;
 
   const ranked = [...GAMES]
+    .filter(game => game.requests > 0)
     .sort((a, b) => b.requests - a.requests)
     .slice(0, 4);
 
@@ -331,6 +351,7 @@ function renderGames() {
 
   if (empty) {
     empty.hidden = games.length > 0;
+    empty.textContent = catalogError ? "Unable to load live games. Please try again later." : !catalogReady ? "Loading live games…" : "No games match your search.";
   }
 }
 
@@ -348,10 +369,14 @@ function toggleFavorite(id) {
   renderTrending();
 }
 
-const FEATURED = GAMES.filter(game => game.featured);
+// FEATURED is refreshed when live games change.
 
 function renderHero() {
-  if (!FEATURED.length) return;
+  if (!FEATURED.length) {
+    const title = $("#heroTitle");
+    if (title) title.textContent = catalogReady ? "Explore our game collection" : "Loading live games…";
+    return;
+  }
 
   const game = FEATURED[state.heroIndex];
 
@@ -522,9 +547,8 @@ function openDetails(id) {
       </form>
 
       <p class="notice">
-        Prices and availability shown are demo
-        data until live Firebase sync is enabled.
-        Booking is subject to confirmation.
+        Live availability is shared with JDigitalsRental.
+        RENTPLAY PH prices and booking are subject to confirmation.
       </p>
     </div>
   `;
@@ -561,23 +585,15 @@ function closeDetails() {
   state.currentGame = null;
 }
 
-function getSelectedPrice(game, period) {
-  switch (period) {
-    case "1 Week":
-      return game.week;
-
-    case "2 Weeks":
-      return game.twoWeeks;
-
-    case "1 Month":
-      return game.month;
-
-    case "UNLI SWAP":
-      return CONFIG.unliSwapMonthly;
-
-    default:
-      return null;
-  }
+function getSelectedPrice(game, period, slot) {
+  const key = slot === "Non-Trophy" ? "nonTrophy" : "trophy";
+  const p = game.slotPrices?.[key] || {};
+  let value = null;
+  if (period === "1 Week") value = p.week;
+  if (period === "2 Weeks") value = p.twoWeeks;
+  if (period === "1 Month") value = p.month;
+  if (period === "UNLI SWAP") value = p.unliSwap ?? RENTPLAY_UNLI_SWAP[key];
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 function updateRentalSummary() {
@@ -595,7 +611,7 @@ function updateRentalSummary() {
       ? game.trophy
       : game.nonTrophy;
 
-  const price = getSelectedPrice(game, period);
+  const price = getSelectedPrice(game, period, slot);
 
   const summary = $("#rentalSummary");
   if (!summary) return;
@@ -951,6 +967,7 @@ function initRentPlay() {
   renderTrending();
   renderGames();
   setupEvents();
+  window.RENTPLAY_FIREBASE?.start?.();
 
   console.log(
     "RENTPLAY PH Cinematic Edition V2 loaded."
