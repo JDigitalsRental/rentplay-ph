@@ -529,6 +529,22 @@ function gameArt(game) {
 
 
 
+// Render a real image element instead of embedding a URL in CSS text.
+// This avoids inline-style parsing problems and allows a visible fallback.
+function coverImage(game, eager = false) {
+  if (!game.image || !/^https:\/\//i.test(game.image)) return "";
+  return `<img src="${escapeHTML(game.image)}" alt="${escapeHTML(game.title)} cover"
+    loading="${eager ? "eager" : "lazy"}" decoding="async"
+    style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block"
+    onerror="this.style.display='none';this.parentElement.querySelector('.rentplay-cover-fallback')?.style.setProperty('display','flex')">`;
+}
+
+function coverFallback(game) {
+  return `<div class="rentplay-cover-fallback" style="position:absolute;inset:0;display:${game.image ? 'none' : 'flex'};align-items:end;padding:15px;background:linear-gradient(135deg,#23446c,#111525 60%,#8a3548);color:white;font-weight:900;font-size:clamp(15px,2vw,24px);line-height:1.1;text-shadow:0 3px 12px #000">
+    ${escapeHTML(game.title)}
+  </div>`;
+}
+
 function favoriteButton(game) {
 
   const active = state.favorites.includes(game.id);
@@ -571,7 +587,7 @@ function gameCard(game) {
 
         class="game-image"
 
-        style="background-image:${gameBackground(game)}"
+        style="position:relative;overflow:hidden"
 
       >
 
@@ -579,7 +595,8 @@ function gameCard(game) {
 
         ${favoriteButton(game)}
 
-        ${gameArt(game)}
+        ${coverFallback(game)}
+        ${coverImage(game)}
 
       </div>
 
@@ -837,7 +854,9 @@ function renderHero() {
 
   if (art) {
 
-    art.style.backgroundImage = gameBackground(game);
+    art.style.backgroundImage = "none";
+    art.style.backgroundColor = "#15121b";
+    art.innerHTML = `${coverFallback(game)}${coverImage(game, true)}`;
 
   }
 
@@ -1005,8 +1024,8 @@ function openDetails(id) {
 
     >
 
-      ${coverText}
-
+      ${coverFallback(game)}
+      ${coverImage(game, true)}
     </div>
 
 
