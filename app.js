@@ -128,7 +128,12 @@ function resolveSharedGameImage(value) {
 
   const raw = String(value || "").trim();
 
-  if (!raw || /^(?:javascript|data|blob|file):/i.test(raw)) return "";
+  if (!raw || /^(?:javascript|blob|file):/i.test(raw)) return "";
+  // Admin uploads are compressed JPEG data URLs saved directly in Firestore.
+  // Only allow base64-encoded raster images; never arbitrary data: payloads.
+  if (/^data:/i.test(raw)) {
+    return /^data:image\/(?:jpeg|jpg|png|webp|gif);base64,[a-z0-9+/]+={0,2}$/i.test(raw) ? raw : "";
+  }
 
   try {
 
@@ -493,7 +498,7 @@ function gameArt(game) {
 
 function coverImage(game, eager = false) {
 
-  if (!game.image || !/^https:\/\//i.test(game.image)) return "";
+  if (!game.image || !/^(?:https:\/\/|data:image\/(?:jpeg|jpg|png|webp|gif);base64,)/i.test(game.image)) return "";
 
   return `<img src="${escapeHTML(game.image)}" alt="${escapeHTML(game.title)} cover"
 
