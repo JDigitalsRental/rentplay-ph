@@ -1306,156 +1306,103 @@ function createBookingMessage(
 
 }
 
-async function submitBooking(event) {
+function closeBookingConfirmation() {
+  const overlay = document.getElementById("rentplayConfirmation");
+  if (!overlay) return;
+  overlay.remove();
+  document.removeEventListener("keydown", rentplayConfirmationEscape);
+  if (!document.querySelector("#modal:not([hidden])")) document.body.style.overflow = "";
+}
 
-  event.preventDefault();
+function rentplayConfirmationEscape(event) {
+  if (event.key === "Escape") closeBookingConfirmation();
+}
 
-  const game = state.currentGame;
+function showBookingConfirmation({ game, name, slot, period, price, available, message, copied }) {
+  closeBookingConfirmation();
+  const overlay = document.createElement("div");
+  overlay.id = "rentplayConfirmation";
+  overlay.className = "rp-confirm-overlay";
+  overlay.innerHTML = `
+    <section class="rp-confirm-card" role="dialog" aria-modal="true" aria-labelledby="rpConfirmTitle" aria-describedby="rpConfirmNotice">
+      <button type="button" class="rp-confirm-close" aria-label="Close confirmation">×</button>
+      <div class="rp-confirm-icon" aria-hidden="true">${copied ? "✓" : "✉"}</div>
+      <div class="rp-confirm-kicker">RENTPLAY PH · NEXT STEP</div>
+      <h2 id="rpConfirmTitle">${copied ? "Inquiry Ready!" : "Your Inquiry Is Ready"}</h2>
+      <p class="rp-confirm-intro">${copied ? "Your rental details have been copied. Paste them into a message to our official Facebook Page." : "Copy your rental details below, then send them to our official Facebook Page."}</p>
+      <div class="rp-confirm-details">
+        <div class="rp-confirm-game">${escapeHTML(game.title)}</div>
+        <div><span>Customer</span><strong>${escapeHTML(name)}</strong></div>
+        <div><span>Account</span><strong>${escapeHTML(slot)}</strong></div>
+        <div><span>Period</span><strong>${escapeHTML(period)}</strong></div>
+        <div><span>Request</span><strong>${available ? "Rental Inquiry" : "Waiting List"}</strong></div>
+        <div class="rp-confirm-price"><span>Estimated Price</span><strong>${price === null ? "To be confirmed" : peso(price)}</strong></div>
+      </div>
+      <div class="rp-confirm-notice" id="rpConfirmNotice"><strong>⚠ Important — Booking Not Yet Confirmed</strong><p>You must message our official Facebook Page and send your rental inquiry to request confirmation. Availability, final price, and payment instructions will be confirmed by our team. Joining the waiting list does not reserve a slot.</p></div>
+      <button type="button" class="rp-confirm-copy">${copied ? "✓ Details Copied · Copy Again" : "Copy Rental Message"}</button>
+      <a class="rp-confirm-facebook" href="${escapeHTML(CONFIG.facebookPage)}" target="_blank" rel="noopener noreferrer">💬 Open Official Facebook Page ↗</a>
+      <p class="rp-confirm-foot">After opening Facebook, paste your rental details into Messenger and send them. No booking is created by this website alone.</p>
+    </section>`;
+  document.body.appendChild(overlay);
+  document.body.style.overflow = "hidden";
+  const copyButton = overlay.querySelector(".rp-confirm-copy");
+  copyButton.addEventListener("click", async () => {
+    const ok = await copyRentplayInquiry(message);
+    copyButton.textContent = ok ? "✓ Copied! Paste into Messenger" : "Select and copy the message below";
+    if (!ok) {
+      let area = overlay.querySelector(".rp-confirm-manual");
+      if (!area) {
+        area = document.createElement("textarea");
+        area.className = "rp-confirm-manual";
+        area.readOnly = true;
+        area.value = message;
+        copyButton.after(area);
+      }
+      area.focus(); area.select();
+    }
+  });
+  overlay.querySelector(".rp-confirm-close").addEventListener("click", closeBookingConfirmation);
+  overlay.addEventListener("click", e => { if (e.target === overlay) closeBookingConfirmation(); });
+  overlay.querySelector(".rp-confirm-facebook").addEventListener("click", () => {
+    // A normal user-initiated link avoids browser popup blockers.
+  });
+  document.addEventListener("keydown", rentplayConfirmationEscape);
+  overlay.querySelector(".rp-confirm-close").focus();
+}
 
-  if (!game) return;
-
-  const name = $("#renterName")?.value.trim();
-
-  const slot = $("#rentalSlot")?.value;
-
-  const period = $("#rentalPeriod")?.value;
-
-  if (!name || !slot || !period) {
-
-    alert(
-
-      "Please complete your rental details."
-
-    );
-
-    return;
-
-  }
-
-  const message = createBookingMessage(
-
-    game,
-
-    name,
-
-    slot,
-
-    period
-
-  );
-
-  let copied = false;
-
+async function copyRentplayInquiry(message) {
   try {
-
-    if (
-
-      navigator.clipboard &&
-
-      window.isSecureContext
-
-    ) {
-
-      await navigator.clipboard.writeText(
-
-        message
-
-      );
-
-      copied = true;
-
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(message);
+      return true;
     }
+  } catch (error) { console.warn("Clipboard permission unavailable:", error); }
+  const field = document.createElement("textarea");
+  field.value = message;
+  field.style.cssText = "position:fixed;top:0;left:0;opacity:0;z-index:-1";
+  document.body.appendChild(field);
+  field.focus(); field.select();
+  let copied = false;
+  try { copied = document.execCommand("copy"); } catch (error) { copied = false; }
+  field.remove();
+  return copied;
+}
 
-  } catch (error) {
-
-    console.warn(
-
-      "Clipboard permission unavailable.",
-
-      error
-
-    );
-
-  }
-
-  if (!copied) {
-
-    const field =
-
-      document.createElement("textarea");
-
-    field.value = message;
-
-    field.style.position = "fixed";
-
-    field.style.opacity = "0";
-
-    document.body.appendChild(field);
-
-    field.focus();
-
-    field.select();
-
-    try {
-
-      copied = document.execCommand("copy");
-
-    } catch (error) {
-
-      copied = false;
-
-    }
-
-    field.remove();
-
-  }
-
-  if (!CONFIG.facebookPage) {
-
-    window.prompt(
-
-      "Messenger Page is not configured yet. Copy this rental inquiry:",
-
-      message
-
-    );
-
-    return;
-
-  }
-
-  if (!copied) {
-
-    window.prompt(
-
-      "Copy this inquiry before continuing to Facebook:",
-
-      message
-
-    );
-
-  } else {
-
-    alert(
-
-      "Your rental inquiry has been copied!\n\n" +
-
-      "Open our Facebook Page and paste the message in Messenger."
-
-    );
-
-  }
-
-  window.open(
-
-    CONFIG.facebookPage,
-
-    "_blank",
-
-    "noopener,noreferrer"
-
-  );
-
+async function submitBooking(event) {
+  event.preventDefault();
+  const game = state.currentGame;
+  if (!game) return;
+  const form = document.querySelector("#bookingForm");
+  if (form && !form.reportValidity()) return;
+  const name = document.querySelector("#renterName")?.value.trim();
+  const slot = document.querySelector("#rentalSlot")?.value;
+  const period = document.querySelector("#rentalPeriod")?.value;
+  if (!name || !slot || !period) return;
+  const message = createBookingMessage(game, name, slot, period);
+  const price = getSelectedPrice(game, period, slot);
+  const available = slot === "Trophy" ? game.trophy : game.nonTrophy;
+  const copied = await copyRentplayInquiry(message);
+  showBookingConfirmation({ game, name, slot, period, price, available, message, copied });
 }
 
 function setupEvents() {
