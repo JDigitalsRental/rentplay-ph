@@ -1,4 +1,4 @@
-/* RENTPLAY PH — Firebase synced game covers from JDigitalsRental (V2 image fix)
+/* RENTPLAY PH — image attribute quoting fix V4 (shared Firebase catalog)
 
  * Replace the entire app.js in the firebase-integration branch.
 
@@ -426,7 +426,8 @@ function gameBackground(game) {
 
       .replace(/\(/g, "%28")
 
-      .replace(/\)/g, "%29");
+      .replace(/\)/g, "%29")
+      .replace(/'/g, "%27");
 
 
 
@@ -438,7 +439,7 @@ function gameBackground(game) {
 
       transparent
 
-    ),url("${safeURL}")`;
+    ),url('${safeURL}')`;
 
   }
 
