@@ -114,3 +114,29 @@ body{background:radial-gradient(ellipse 75% 28% at 50% 0%,#2b101a 0%,transparent
  .game-content .prices{overflow-wrap:anywhere}
 }
 @media(prefers-reduced-motion:reduce){.slot,.benefits>div,.booking-submit{transition:none!important}}
+
+/* RENTPLAY PH V3 — FULL COVER VISIBILITY + DESKTOP SPLIT FIX */
+/* Keep the entire original game image visible instead of cropping artwork/text. */
+.game-card .game-image{aspect-ratio:16/10!important;height:auto!important;min-height:0!important;background:radial-gradient(circle at center,#252934,#0b0d13 80%)!important}
+.game-card .game-image>img{object-fit:contain!important;object-position:center center!important;transform:none!important;filter:none!important}
+.game-card:hover .game-image>img{transform:scale(1.015)!important}
+.game-card .game-image:after{background:linear-gradient(0deg,#090b1199,transparent 30%)!important}
+/* The actual modal markup is #modal > .modal-dialog > #modalBody. */
+@media(min-width:781px){
+ #modal .modal-dialog{width:min(1120px,calc(100vw - 44px))!important;max-width:none!important;max-height:90dvh!important;overflow-y:auto!important}
+ #modal .modal-dialog #modalBody{display:grid!important;grid-template-columns:minmax(0,44%) minmax(0,56%)!important;align-items:stretch!important;min-height:0!important}
+ #modal .modal-dialog #modalBody>.modal-cover{position:sticky!important;top:0!important;align-self:start!important;height:90dvh!important;min-height:0!important;max-height:900px!important;overflow:hidden!important;border-right:1px solid #ffffff2b}
+ #modal .modal-dialog #modalBody>.modal-cover>img{object-fit:contain!important;object-position:center!important;background:linear-gradient(145deg,#25202a,#0b0d14)!important}
+ #modal .modal-dialog #modalBody>.modal-info{min-width:0!important;padding:26px 32px!important}
+}
+@media(max-width:780px){
+ #modal .modal-dialog{width:min(620px,100%)!important;max-height:95dvh!important}
+ #modal .modal-dialog #modalBody{display:block!important}
+ #modal .modal-dialog #modalBody>.modal-cover{height:200px!important;position:relative!important}
+ #modal .modal-dialog #modalBody>.modal-cover>img{object-fit:contain!important;object-position:center!important;background:#10121a!important}
+}
+@media(max-width:480px){
+ .game-card .game-image{aspect-ratio:4/5!important}
+ #modal .modal-dialog #modalBody>.modal-cover{height:170px!important}
+ #modal .modal-dialog #modalBody>.modal-info{padding:16px!important}
+}
