@@ -198,6 +198,7 @@ function liveGame(doc) {
 
     featured: data.featured !== false,
 
+    waiting: { trophy: 0, nonTrophy: 0 },
     requests: 0
 
   };
@@ -222,7 +223,8 @@ function applyWaitingCounts() {
 
     const count = latestWaitingCounts[game.title] || latestWaitingCounts[game.id] || {};
 
-    game.requests = (Number(count.trophy) || 0) + (Number(count.nonTrophy) || 0);
+    game.waiting = { trophy: Number(count.trophy) || 0, nonTrophy: Number(count.nonTrophy) || 0 };
+    game.requests = game.waiting.trophy + game.waiting.nonTrophy;
 
   }
 
@@ -256,7 +258,12 @@ function refreshLiveView() {
 
       // Update visible summary without resetting user-entered booking fields.
 
-      if (document.querySelector("#rentalSummary")) updateRentalSummary();
+      if (document.querySelector("#rentalSummary")) {
+          updateRentalSummary();
+          const slots = document.querySelectorAll("#modalBody .slot-row .slot b");
+          if (slots[0]) slots[0].textContent = "🏆 Trophy · " + (updated.waiting?.trophy ?? 0) + " waiting";
+          if (slots[1]) slots[1].textContent = "🎮 Non-Trophy · " + (updated.waiting?.nonTrophy ?? 0) + " waiting";
+        }
 
     }
 
@@ -532,6 +539,12 @@ function favoriteButton(game) {
 
 }
 
+function startingPrice(game) {
+  const values = [game.slotPrices?.trophy?.week, game.slotPrices?.nonTrophy?.week]
+    .filter(v => typeof v === "number" && Number.isFinite(v) && v >= 0);
+  return values.length ? Math.min(...values) : null;
+}
+
 function gameCard(game) {
 
   const available = isAvailable(game);
@@ -574,9 +587,8 @@ function gameCard(game) {
 
         <div class="prices">
 
-          <span>🏆 Trophy / 🎮 Non-Trophy</span>
-
-          <span>See separate prices in View Details</span>
+          <span class="rp-starting">From ${startingPrice(game) === null ? "Ask for price" : peso(startingPrice(game))} / week</span>
+          <span class="rp-wait-count">🏆 ${game.waiting?.trophy ?? 0} waiting · 🎮 ${game.waiting?.nonTrophy ?? 0} waiting</span>
 
         </div>
 
@@ -930,9 +942,9 @@ function openDetails(id) {
 
       <div class="slot-row">
 
-        ${slotMarkup("🏆 Trophy", game.trophy)}
+        ${slotMarkup("🏆 Trophy · " + (game.waiting?.trophy ?? 0) + " waiting", game.trophy)}
 
-        ${slotMarkup("🎮 Non-Trophy", game.nonTrophy)}
+        ${slotMarkup("🎮 Non-Trophy · " + (game.waiting?.nonTrophy ?? 0) + " waiting", game.nonTrophy)}
 
       </div>
 
@@ -1398,11 +1410,36 @@ async function submitBooking(event) {
   const slot = document.querySelector("#rentalSlot")?.value;
   const period = document.querySelector("#rentalPeriod")?.value;
   if (!name || !slot || !period) return;
-  const message = createBookingMessage(game, name, slot, period);
-  const price = getSelectedPrice(game, period, slot);
   const available = slot === "Trophy" ? game.trophy : game.nonTrophy;
-  const copied = await copyRentplayInquiry(message);
-  showBookingConfirmation({ game, name, slot, period, price, available, message, copied });
+  const price = getSelectedPrice(game, period, slot);
+  const message = createBookingMessage(game, name, slot, period);
+  const button = form?.querySelector('button[type="submit"]');
+  if (button) { button.disabled = true; button.textContent = available ? "Preparing inquiry…" : "Saving waiting-list request…"; }
+  try {
+    if (!available) {
+      const key = "rpWait:" + game.id + ":" + slot + ":" + name.toLowerCase().replace(/\s+/g, " ");
+      if (localStorage.getItem(key)) {
+        const proceed = window.confirm("This browser already submitted a waiting-list request for this game and account type. Open Messenger instead of submitting again?");
+        if (!proceed) return;
+      } else {
+        await window.RENTPLAY_FIREBASE.joinWaitingList({
+          gameId: game.id, gameName: game.title, customerName: name,
+          accountType: slot, rentalPeriod: period,
+          rentalPlan: period === "UNLI SWAP" ? "Monthly UNLI SWAP" : period === "1 Month" ? "Monthly Single Game (No Swap)" : "Regular Weekly Rental",
+          price
+        });
+        try { localStorage.setItem(key, "submitted"); } catch (_) {}
+      }
+    }
+    const copied = await copyRentplayInquiry(message);
+    showBookingConfirmation({ game, name, slot, period, price, available, message, copied });
+  } catch (error) {
+    console.error("RENTPLAY waiting list failed", error);
+    window.alert("Waiting-list request was NOT saved. Please try again or message our Facebook Page. " + (error?.code === "permission-denied" ? "Check Firestore rules." : ""));
+  } finally {
+    if (button) button.disabled = false;
+    updateRentalSummary();
+  }
 }
 
 function setupEvents() {
