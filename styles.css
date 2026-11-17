@@ -354,3 +354,29 @@ body{background:radial-gradient(ellipse 75% 28% at 50% 0%,#2b101a 0%,transparent
 }
 @media(max-width:360px){#home #heroTitle{font-size:32px!important}#home .hero-actions{gap:7px!important}}
 @media(prefers-reduced-motion:reduce){#home .hero-art,#home #heroTitle{animation:none!important;transition:none!important}}
+
+/* RENTPLAY PH — PREMIUM BOOKING CONFIRMATION V1 */
+.rp-booking-warning{display:grid;gap:6px;padding:13px 15px;border-radius:12px;border:1px solid #e2a34a65;background:#2a211a;color:#f7dfba;font-size:12px;line-height:1.55;margin:15px 0 7px}
+.rp-booking-warning strong{color:#ffd58b;font-size:13px}
+.rp-confirm-overlay{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:#030306df;backdrop-filter:blur(11px);overflow-y:auto}
+.rp-confirm-card{position:relative;width:min(490px,100%);max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;border:1px solid #bc4054;border-radius:22px;padding:27px;background:linear-gradient(155deg,#21151e,#11141d 48%,#101118);color:#f8f8fa;box-shadow:0 25px 90px #000e,0 0 45px #ba20302c;font-family:Inter,Arial,sans-serif}
+.rp-confirm-close{position:absolute;top:14px;right:15px;width:35px;height:35px;border-radius:50%;border:1px solid #ffffff45;background:#151821;color:#fff;font-size:24px;line-height:1}
+.rp-confirm-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:#173d31;border:1px solid #2eac7c;color:#76f5b3;font-size:27px;font-weight:900;margin-bottom:14px}
+.rp-confirm-kicker{font-size:10px;letter-spacing:2px;color:#ff7083;font-weight:800}
+.rp-confirm-card h2{font:800 clamp(28px,5vw,38px)/1.1 'Barlow Condensed',Inter,sans-serif;text-transform:uppercase;margin:8px 0 10px}
+.rp-confirm-intro{font-size:13px;line-height:1.6;color:#c5c7d0;margin:0 0 18px}
+.rp-confirm-details{display:grid;gap:10px;background:#10131a;border:1px solid #ffffff25;border-radius:14px;padding:16px;margin-bottom:14px}
+.rp-confirm-game{font-weight:800;font-size:17px;padding-bottom:9px;border-bottom:1px solid #ffffff25;overflow-wrap:anywhere}
+.rp-confirm-details>div:not(.rp-confirm-game){display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:12px}
+.rp-confirm-details span{color:#aeb1bf}.rp-confirm-details strong{text-align:right;overflow-wrap:anywhere}
+.rp-confirm-details .rp-confirm-price{border-top:1px solid #ffffff25;padding-top:12px;margin-top:2px;align-items:center}
+.rp-confirm-price strong{font-size:26px;color:#ff6a7c}
+.rp-confirm-notice{padding:13px 14px;background:#282016;border:1px solid #a778376e;border-radius:12px;color:#ffe2b4}
+.rp-confirm-notice strong{display:block;font-size:12px}.rp-confirm-notice p{margin:6px 0 0;font-size:11px;line-height:1.65;color:#e5d1b4}
+.rp-confirm-copy,.rp-confirm-facebook{display:flex;align-items:center;justify-content:center;text-align:center;width:100%;min-height:47px;padding:11px 13px;border-radius:11px;font-size:13px;font-weight:800;margin-top:11px;text-decoration:none;cursor:pointer}
+.rp-confirm-copy{background:#242834;color:#fff;border:1px solid #606675}.rp-confirm-facebook{background:linear-gradient(135deg,#b51228,#f32940);color:white;border:1px solid #ff596c;box-shadow:0 8px 22px #c51b3540}
+.rp-confirm-copy:hover,.rp-confirm-facebook:hover{filter:brightness(1.12)}
+.rp-confirm-foot{font-size:10px;color:#9da2b0;text-align:center;line-height:1.6;margin:13px 0 0}
+.rp-confirm-manual{display:block;width:100%;height:105px;margin-top:10px;background:#0d1017;color:#fff;border:1px solid #656a75;border-radius:8px;padding:9px;font-size:12px}
+@media(max-width:480px){.rp-confirm-overlay{padding:8px}.rp-confirm-card{padding:21px 17px;max-height:calc(100dvh - 16px);border-radius:16px}.rp-confirm-details{padding:13px}.rp-confirm-card h2{font-size:31px}}
+@media(prefers-reduced-motion:reduce){.rp-confirm-overlay *{scroll-behavior:auto!important}}
