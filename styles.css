@@ -69,3 +69,48 @@ body{background:radial-gradient(ellipse 75% 28% at 50% 0%,#2b101a 0%,transparent
 @media(max-width:480px){.wrap{width:calc(100% - 28px)}.site-header{min-height:64px}.hero{height:455px}.hero-inner{padding-top:69px}.hero h1{font-size:clamp(44px,12vw,62px);max-width:350px}.hero p{font-size:13px;max-width:320px}.hero-controls{margin-top:26px}.benefits{margin-top:-22px}.benefits>div{padding:13px 10px}.benefits b{font-size:11px}.benefits span{font-size:10px}.section{padding-top:58px}.game-grid{gap:10px}.game-image{aspect-ratio:3/3.35}.game-content{padding:11px;gap:8px}.game-content h3{font-size:12px;min-height:48px}.game-content .status{font-size:9px;padding:4px 6px}.game-content .prices{font-size:10px;min-height:43px}.game-content .details-btn{font-size:11px;min-height:39px}.game-image .genre{top:8px;left:8px;font-size:9px;padding:3px 6px}.game-image .favorite{top:7px;right:7px;width:30px;height:30px;font-size:20px}.toolbar{gap:12px}.filters{margin-right:-14px;padding-right:14px}.chip{min-height:39px}.modal{padding:7px}.modal-dialog{max-height:96dvh;border-radius:15px}.modal-cover{height:175px}.modal-info{padding:17px}.modal-info h2{font-size:30px}.slot-row{gap:8px}.slot{padding:10px}.slot b,.slot span{font-size:11px}.booking-fields{grid-template-columns:1fr;gap:12px}.booking-fields .full{grid-column:auto}.booking-fields input,.booking-fields select{min-height:46px}.modal-info h3{margin:19px 0 9px}.booking-submit{min-height:49px}.closing{margin-top:60px;margin-bottom:50px}}
 @media(max-width:350px){.brand strong{font-size:13px}.brand small{font-size:7px}.game-content h3{font-size:11px}.game-content .prices{font-size:9px}.game-grid{gap:8px}}
 @media(prefers-reduced-motion:reduce){.game-image img,.game-card,.plan{transition:none!important}}
+
+
+/* RENTPLAY PH — PREMIUM FINAL POLISH V2: desktop split details, mobile stack */
+@media(min-width:781px){
+ .modal-dialog{width:min(1060px,calc(100vw - 44px));max-height:min(88dvh,900px);overflow:auto}
+ #modalBody{display:grid;grid-template-columns:minmax(270px,.82fr) minmax(0,1.18fr);align-items:stretch;min-height:610px}
+ #modalBody>.modal-cover{position:sticky!important;top:0;align-self:start;height:min(88dvh,900px);min-height:610px;background-position:center;background-size:cover;border-right:1px solid #ffffff20}
+ #modalBody>.modal-cover img{object-position:center center!important}
+ #modalBody>.modal-cover:after{content:"";position:absolute;inset:40% 0 0;background:linear-gradient(transparent,#090a0e8a);pointer-events:none}
+ #modalBody>.modal-info{min-width:0;padding:clamp(24px,3vw,38px)}
+ #modalBody .modal-info h2{font-size:clamp(32px,3vw,48px)}
+}
+@media(min-width:781px) and (max-height:720px){#modalBody>.modal-cover{min-height:550px}}
+@media(max-width:780px){
+ #modalBody{display:block}
+ #modalBody>.modal-cover{position:relative;height:clamp(160px,31vh,240px);overflow:hidden}
+ #modalBody>.modal-cover img{object-position:center 30%!important}
+ .modal-dialog{width:min(620px,100%);overflow:auto}
+}
+/* Make pricing and primary booking action visually prominent without changing JS. */
+#rentalSummary{position:relative;overflow:hidden;padding:18px!important;border-radius:14px!important;border:1px solid #ffffff3a!important;box-shadow:inset 0 1px #ffffff12}
+#rentalSummary>div[style*="font-size:20px"]{font-size:clamp(27px,3vw,36px)!important;letter-spacing:-.8px;line-height:1.2;color:#fff!important;margin-top:14px!important}
+.booking-submit{box-shadow:0 8px 26px #cf1b3940!important;font-weight:850;letter-spacing:.1px}
+.booking-submit:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.slot{transition:border-color .2s,background .2s}
+.slot:hover{border-color:#f1486060;background:#252630}
+.hero{isolation:isolate}
+.hero-shade{pointer-events:none}
+.hero h1{text-wrap:balance;max-width:610px}
+.hero-controls #heroDots button:focus-visible{outline:2px solid white;outline-offset:4px}
+.benefits>div{transition:background .2s}
+.benefits>div:hover{background:#ffffff0b}
+.game-card:focus-within{border-color:#ff5c6c;box-shadow:0 0 0 2px #ff5c6c33}
+@media(max-width:480px){
+ .modal-dialog{max-height:96dvh}
+ #modalBody>.modal-cover{height:155px}
+ #modalBody>.modal-info{padding:16px}
+ #rentalSummary{padding:14px!important}
+ #rentalSummary>div[style*="font-size:20px"]{font-size:28px!important}
+ .hero h1{font-size:clamp(38px,11vw,58px);line-height:1.02}
+ .hero-inner{padding-top:62px}
+ .hero-actions{flex-wrap:wrap}
+ .game-content .prices{overflow-wrap:anywhere}
+}
+@media(prefers-reduced-motion:reduce){.slot,.benefits>div,.booking-submit{transition:none!important}}
