@@ -2053,3 +2053,41 @@ if (
   initRentPlay();
 
 }
+/* RENTPLAY PH — LIVE FIREBASE PRICES V1
+ * Paste this entire block at the VERY BOTTOM of the existing app.js.
+ * Do not replace or delete the existing code.
+ * No changes to firebase.js, styles.css, index.html, or JDigitalsRental.
+ */
+(() => {
+  const previousLiveGame = liveGame;
+
+  function validPrice(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const number = typeof value === "number" ? value : Number(String(value).replace(/[₱,\s]/g, ""));
+    return Number.isFinite(number) && number >= 0 ? number : null;
+  }
+
+  liveGame = function (doc) {
+    const game = previousLiveGame(doc);
+    const prices = doc.data()?.rentplayPrices;
+    if (!prices || typeof prices !== "object") return game;
+
+    game.slotPrices = {
+      trophy: {
+        week: validPrice(prices.weeklyTrophy),
+        twoWeeks: validPrice(prices.twoWeeksTrophy),
+        month: validPrice(prices.singleMonthlyTrophy),
+        unliSwap: validPrice(prices.monthlyTrophy)
+      },
+      nonTrophy: {
+        week: validPrice(prices.weeklyNonTrophy),
+        twoWeeks: validPrice(prices.twoWeeksNonTrophy),
+        month: validPrice(prices.singleMonthlyNonTrophy),
+        unliSwap: validPrice(prices.monthlyNonTrophy)
+      }
+    };
+    return game;
+  };
+
+  console.log("RENTPLAY PH: separate Firebase prices connected.");
+})();
