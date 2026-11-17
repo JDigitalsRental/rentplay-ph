@@ -1,3 +1,7 @@
+/* RENTPLAY PH — Firebase synced game covers from JDigitalsRental (V2 image fix)
+ * Replace the entire app.js in the firebase-integration branch.
+ * No changes to firebase.js, index.html, styles.css, or JDigitalsRental.
+ */
 
 /*
  RENTPLAY PH — CINEMATIC EDITION V2
@@ -60,16 +64,43 @@ function slotRented(data, slot) {
   if (/^(available now|available)$/i.test(date)) return false;
   return String(data.status || "").toLowerCase() === "currently-rented";
 }
+// Resolve Firestore cover paths against the JDigitalsRental website,
+// NOT the RENTPLAY PH preview/GitHub Pages URL.
+// Firestore remains the source of truth: image changes sync automatically.
+const JDIGITALS_IMAGE_BASE = "https://jdigitalsrental.github.io/JDigitalsRental/";
+function resolveSharedGameImage(value) {
+  const raw = String(value || "").trim();
+  if (!raw || /^(?:javascript|data|blob|file):/i.test(raw)) return "";
+  try {
+    // Keep full HTTPS URLs (including Firebase Storage URLs) untouched.
+    if (/^https:\/\//i.test(raw)) return raw;
+    // Protocol-relative links, HTTP links, and unrecognized schemes are not used.
+    if (/^(?:\/\/|[a-z][a-z0-9+.-]*:)/i.test(raw)) return "";
+    // A path starting /JDigitalsRental/ is already rooted at the GitHub Pages repo.
+    if (/^\/JDigitalsRental\//i.test(raw)) {
+      return new URL(raw, "https://jdigitalsrental.github.io").href;
+    }
+    // Relative paths such as assets/cover.jpg and /assets/cover.jpg.
+    const cleanPath = raw.replace(/^\.\//, "").replace(/^\/+/, "");
+    const url = new URL(cleanPath, JDIGITALS_IMAGE_BASE);
+    // Do not allow a relative path to escape the expected image host.
+    return url.origin === "https://jdigitalsrental.github.io" ? url.href : "";
+  } catch (error) {
+    console.warn("RENTPLAY image path could not be resolved:", raw, error);
+    return "";
+  }
+}
+
 function liveGame(doc) {
   const data = doc.data();
   const title = String(data.name || data.title || "Untitled Game");
   const priceConfig = RENTPLAY_PRICES[doc.id] || RENTPLAY_PRICES[normalizedTitle(title)] || {};
   const genre = String(data.genre || data.type || "Other");
-  const image = String(data.image || "");
+  const image = resolveSharedGameImage(data.image);
   return {
     id: doc.id, title, genre,
     description: String(data.description || data.meta || "PS5 digital game rental"),
-    image: /^https:\/\//i.test(image) ? image : (image && !/^(javascript:|data:)/i.test(image) ? new URL(image, document.baseURI).href : ""),
+    image,
     colors: ["#23446c", "#111525", "#8a3548"],
     trophy: !slotRented(data, "trophy"),
     nonTrophy: !slotRented(data, "nonTrophy"),
