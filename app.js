@@ -55,6 +55,7 @@ let catalogReady = false;
 let catalogError = false;
 
 let latestWaitingCounts = {};
+let UPCOMING_GAMES = [];
 
 // RENTPLAY-only prices. Key by Firestore document ID OR normalized game title.
 
@@ -212,6 +213,11 @@ function liveGame(doc) {
 
 function onLiveGames(docs) {
 
+  UPCOMING_GAMES = docs.filter(d => String(d.data().status || "").toLowerCase() === "upcoming").map(d => ({
+    ...liveGame(d),
+    availableDate: d.data().availableDate || "",
+    status: "upcoming"
+  }));
   GAMES = docs.filter(d => String(d.data().status || "").toLowerCase() !== "upcoming").map(liveGame);
 
   catalogReady = true;
@@ -251,7 +257,7 @@ function refreshLiveView() {
 
   if (state.heroIndex >= FEATURED.length) state.heroIndex = 0;
 
-  renderHero(); renderTrending(); renderGames();
+  renderHero(); renderTrending(); renderGames(); renderRentplayUpcoming();
 
   if (state.currentGame) {
 
@@ -1787,3 +1793,75 @@ if (
     return game;
   };
 })();
+
+/* RENTPLAY PH — upcoming games from shared Firestore catalog */
+function renderRentplayUpcoming() {
+  let section = document.getElementById("upcoming");
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "upcoming";
+    section.className = "section wrap";
+    section.innerHTML = `<div class="section-heading"><div><span class="kicker">NEXT TO ARRIVE</span><h2>📅 Upcoming Games</h2><p>New adventures coming soon. Dates are subject to change.</p></div><span id="upcomingCount" class="count"></span></div><div id="upcomingGrid" class="game-grid"></div>`;
+    const plans = document.getElementById("plans");
+    if (plans) plans.before(section);
+    else document.querySelector("main")?.appendChild(section);
+    const nav = document.getElementById("nav");
+    if (nav && !nav.querySelector('a[href="#upcoming"]')) {
+      const link = document.createElement("a");
+      link.href = "#upcoming";
+      link.textContent = "Upcoming";
+      nav.querySelector('a[href="#plans"]')?.before(link);
+    }
+  }
+  const grid = document.getElementById("upcomingGrid");
+  if (!grid) return;
+  const list = [...UPCOMING_GAMES].sort((a,b) => {
+    const da = Date.parse(a.availableDate), db = Date.parse(b.availableDate);
+    return (Number.isFinite(da)?da:Infinity)-(Number.isFinite(db)?db:Infinity);
+  });
+  document.getElementById("upcomingCount").textContent = `${list.length} upcoming`;
+  grid.replaceChildren();
+  if (!list.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = catalogReady ? "No upcoming games at the moment. 🎮" : "Loading upcoming games…";
+    grid.appendChild(empty);
+    return;
+  }
+  for (const game of list) {
+    const card = document.createElement("article");
+    card.style.cssText = "background:#171a23;border:1px solid #353846;border-radius:15px;overflow:hidden;display:flex;flex-direction:column";
+    const cover = document.createElement("img");
+    cover.src = game.image || "";
+    cover.alt = game.title;
+    cover.loading = "lazy";
+    cover.style.cssText = "width:100%;aspect-ratio:3/4;object-fit:cover;background:#222635";
+    const body = document.createElement("div");
+    body.style.cssText = "padding:14px;display:flex;flex-direction:column;gap:9px;flex:1";
+    const tag = document.createElement("small");
+    tag.textContent = "🟡 COMING SOON";
+    tag.style.cssText = "color:#f6ca72;font-weight:800;letter-spacing:.08em";
+    const title = document.createElement("h3");
+    title.textContent = game.title;
+    title.style.margin = "0";
+    const date = document.createElement("p");
+    const rawDate = game.availableDate;
+    const parsed = rawDate?.toDate?.() || (rawDate ? new Date(rawDate) : null);
+    const formatted = parsed instanceof Date && !Number.isNaN(parsed.getTime()) ? parsed.toLocaleDateString("en-PH",{month:"long",day:"numeric",year:"numeric",timeZone:"Asia/Manila"}) : (rawDate && typeof rawDate === "string" ? rawDate : "Date TBA");
+    date.textContent = "📅 Available for rent: " + formatted;
+    date.style.cssText = "font-size:13px;color:#c4c8d2;margin:0";
+    const action = document.createElement("a");
+    action.href = CONFIG.facebookPage;
+    action.target = "_blank";
+    action.rel = "noopener noreferrer";
+    action.textContent = "💬 Ask About This Game ↗";
+    action.style.cssText = "display:block;margin-top:auto;text-align:center;padding:11px;border-radius:8px;background:#d92738;color:white;font-weight:700;text-decoration:none";
+    action.addEventListener("click",() => {
+      const msg = `Hi RENTPLAY PH! I'd like to inquire about the upcoming PS5 game ${game.title} (available: ${formatted}). Please let me know how to join the waiting list.`;
+      navigator.clipboard?.writeText(msg).catch(()=>{});
+    });
+    body.append(tag,title,date,action);
+    card.append(cover,body);
+    grid.appendChild(card);
+  }
+}
