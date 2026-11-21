@@ -1850,18 +1850,111 @@ function renderRentplayUpcoming() {
     const formatted = parsed instanceof Date && !Number.isNaN(parsed.getTime()) ? parsed.toLocaleDateString("en-PH",{month:"long",day:"numeric",year:"numeric",timeZone:"Asia/Manila"}) : (rawDate && typeof rawDate === "string" ? rawDate : "Date TBA");
     date.textContent = "📅 Available for rent: " + formatted;
     date.style.cssText = "font-size:13px;color:#c4c8d2;margin:0";
-    const action = document.createElement("a");
-    action.href = CONFIG.facebookPage;
-    action.target = "_blank";
-    action.rel = "noopener noreferrer";
-    action.textContent = "💬 Ask About This Game ↗";
-    action.style.cssText = "display:block;margin-top:auto;text-align:center;padding:11px;border-radius:8px;background:#d92738;color:white;font-weight:700;text-decoration:none";
-    action.addEventListener("click",() => {
-      const msg = `Hi RENTPLAY PH! I'd like to inquire about the upcoming PS5 game ${game.title} (available: ${formatted}). Please let me know how to join the waiting list.`;
-      navigator.clipboard?.writeText(msg).catch(()=>{});
-    });
+    const action = document.createElement("button");
+    action.type = "button";
+    action.textContent = "📝 Join Waiting List ↗";
+    action.style.cssText = "display:block;width:100%;margin-top:auto;text-align:center;padding:11px;border:0;border-radius:8px;background:#d92738;color:white;font-weight:700;cursor:pointer";
+    action.addEventListener("click", () => openRentplayUpcomingForm(game, formatted));
     body.append(tag,title,date,action);
     card.append(cover,body);
     grid.appendChild(card);
   }
+}
+
+
+/* Upcoming Game interest form — submits to the existing private waitingList and publicWaitingList batch. */
+function openRentplayUpcomingForm(game, availableDateLabel) {
+  document.getElementById("rpUpcomingFormOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "rpUpcomingFormOverlay";
+  overlay.style.cssText = "position:fixed;inset:0;z-index:30000;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto";
+  const panel = document.createElement("div");
+  panel.style.cssText = "width:100%;max-width:460px;max-height:90vh;overflow-y:auto;background:#171a23;color:#fff;border:1px solid #444856;border-radius:17px;padding:22px;box-shadow:0 24px 80px #000";
+  const top = document.createElement("div");
+  top.style.cssText = "display:flex;justify-content:space-between;gap:12px;align-items:start";
+  const title = document.createElement("h2");
+  title.textContent = "📅 Upcoming Game Waiting List";
+  title.style.cssText = "font-size:21px;margin:0 0 12px";
+  const close = document.createElement("button");
+  close.type = "button";
+  close.textContent = "✕";
+  close.setAttribute("aria-label", "Close waiting list form");
+  close.style.cssText = "background:transparent;border:0;color:#fff;font-size:23px;cursor:pointer";
+  top.append(title,close);
+  const gameTitle = document.createElement("p");
+  gameTitle.style.cssText = "font-weight:800;margin:5px 0";
+  gameTitle.textContent = game.title;
+  const date = document.createElement("p");
+  date.style.cssText = "color:#b9becb;font-size:13px;margin:0 0 15px";
+  date.textContent = "📅 Available for rent: " + availableDateLabel;
+  const form = document.createElement("form");
+  form.style.cssText = "display:grid;gap:13px";
+  function field(labelText, control) {
+    const label = document.createElement("label");
+    label.style.cssText = "display:grid;gap:6px;font-size:13px;font-weight:700";
+    label.append(document.createTextNode(labelText), control);
+    control.style.cssText = "width:100%;padding:12px;background:#0b0d14;color:#fff;border:1px solid #505463;border-radius:9px;font:inherit";
+    control.required = true;
+    return label;
+  }
+  const name = document.createElement("input");
+  name.type = "text";
+  name.maxLength = 100;
+  name.placeholder = "Enter your name";
+  name.autocomplete = "name";
+  const slot = document.createElement("select");
+  for (const v of ["Trophy", "Non-Trophy"]) slot.add(new Option(v,v));
+  const period = document.createElement("select");
+  for (const v of ["1 Week", "2 Weeks", "1 Month", "UNLI SWAP"]) period.add(new Option(v,v));
+  const note = document.createElement("p");
+  note.textContent = "This is a waiting-list request, not a confirmed rental. Our team will contact you about availability and pricing.";
+  note.style.cssText = "color:#b9becb;font-size:12px;line-height:1.6;margin:0";
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.textContent = "📝 Submit Waiting List Request";
+  submit.style.cssText = "background:#d92738;color:white;border:0;border-radius:9px;padding:13px;font-weight:800;cursor:pointer";
+  const feedback = document.createElement("p");
+  feedback.setAttribute("role","status");
+  feedback.style.cssText = "font-size:13px;line-height:1.5;margin:0";
+  form.append(field("Your Name",name),field("Account Type",slot),field("Preferred Rental Period",period),note,submit,feedback);
+  panel.append(top,gameTitle,date,form);
+  overlay.append(panel);
+  document.body.append(overlay);
+  const dismiss = () => overlay.remove();
+  close.addEventListener("click",dismiss);
+  overlay.addEventListener("click",e=>{if(e.target===overlay)dismiss();});
+  form.addEventListener("submit",async e=>{
+    e.preventDefault();
+    if (!form.reportValidity() || !name.value.trim()) return;
+    submit.disabled = true;
+    submit.textContent = "Saving request…";
+    feedback.textContent = "";
+    try {
+      await window.RENTPLAY_FIREBASE.joinWaitingList({
+        gameId: String(game.id),
+        gameName: String(game.title),
+        customerName: name.value.trim(),
+        accountType: slot.value,
+        rentalPeriod: period.value,
+        rentalPlan: period.value === "UNLI SWAP" ? "Monthly UNLI SWAP" : period.value === "1 Month" ? "Monthly Single Game (No Swap)" : "Regular Weekly Rental"
+      });
+      form.replaceChildren();
+      const success = document.createElement("p");
+      success.style.cssText = "color:#70f5b1;line-height:1.7;font-weight:700";
+      success.textContent = "✅ Successfully added to the waiting list! Your request is saved under RENTPLAY PH. This is not yet a confirmed rental.";
+      const done = document.createElement("button");
+      done.type = "button";
+      done.textContent = "Done";
+      done.style.cssText = "background:#d92738;color:white;border:0;border-radius:9px;padding:12px 24px;cursor:pointer";
+      done.addEventListener("click",dismiss);
+      form.append(success,done);
+    } catch (err) {
+      console.error("Upcoming waiting-list submission failed",err);
+      feedback.style.color = "#ff9eaa";
+      feedback.textContent = "Request was NOT saved. Please try again. " + (err?.code === "permission-denied" ? "Firebase permission denied; check the published Firestore rules." : "Check your connection.");
+      submit.disabled = false;
+      submit.textContent = "📝 Submit Waiting List Request";
+    }
+  });
+  name.focus();
 }
