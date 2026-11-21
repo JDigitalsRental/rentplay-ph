@@ -1906,8 +1906,29 @@ function openRentplayUpcomingForm(game, availableDateLabel) {
   for (const v of ["Trophy", "Non-Trophy"]) slot.add(new Option(v,v));
   const period = document.createElement("select");
   for (const v of ["1 Week", "2 Weeks", "1 Month", "UNLI SWAP"]) period.add(new Option(v,v));
+  const priceBox = document.createElement("div");
+  priceBox.style.cssText = "padding:13px;background:#101f1a;border:1px solid #365a48;border-radius:10px;display:grid;gap:5px";
+  const priceCaption = document.createElement("small");
+  priceCaption.textContent = "ESTIMATED RENTAL PRICE";
+  priceCaption.style.cssText = "font-size:11px;letter-spacing:.07em;color:#b9c9bf;font-weight:700";
+  const priceAmount = document.createElement("strong");
+  priceAmount.style.cssText = "font-size:23px;color:#7cf3ad";
+  const priceDetail = document.createElement("small");
+  priceDetail.style.cssText = "color:#b9c9bf;line-height:1.5";
+  priceBox.append(priceCaption,priceAmount,priceDetail);
+  const selectedUpcomingPrice = () => getSelectedPrice(game,period.value,slot.value);
+  const updateUpcomingPrice = () => {
+    const amount = selectedUpcomingPrice();
+    priceAmount.textContent = amount === null ? "Price TBA" : "₱" + amount.toLocaleString("en-PH");
+    priceDetail.textContent = amount === null
+      ? "No price has been set for this game and plan yet. Please confirm with our team."
+      : slot.value + " · " + period.value + " · Subject to final confirmation";
+  };
+  slot.addEventListener("change",updateUpcomingPrice);
+  period.addEventListener("change",updateUpcomingPrice);
+  updateUpcomingPrice();
   const note = document.createElement("p");
-  note.textContent = "This is a waiting-list request, not a confirmed rental. Our team will contact you about availability and pricing.";
+  note.textContent = "This is a waiting-list request, not a confirmed rental. Our team will contact you to confirm availability and pricing.";
   note.style.cssText = "color:#b9becb;font-size:12px;line-height:1.6;margin:0";
   const submit = document.createElement("button");
   submit.type = "submit";
@@ -1916,7 +1937,7 @@ function openRentplayUpcomingForm(game, availableDateLabel) {
   const feedback = document.createElement("p");
   feedback.setAttribute("role","status");
   feedback.style.cssText = "font-size:13px;line-height:1.5;margin:0";
-  form.append(field("Your Name",name),field("Account Type",slot),field("Preferred Rental Period",period),note,submit,feedback);
+  form.append(field("Your Name",name),field("Account Type",slot),field("Preferred Rental Period",period),priceBox,note,submit,feedback);
   panel.append(top,gameTitle,date,form);
   overlay.append(panel);
   document.body.append(overlay);
@@ -1936,7 +1957,8 @@ function openRentplayUpcomingForm(game, availableDateLabel) {
         customerName: name.value.trim(),
         accountType: slot.value,
         rentalPeriod: period.value,
-        rentalPlan: period.value === "UNLI SWAP" ? "Monthly UNLI SWAP" : period.value === "1 Month" ? "Monthly Single Game (No Swap)" : "Regular Weekly Rental"
+        rentalPlan: period.value === "UNLI SWAP" ? "Monthly UNLI SWAP" : period.value === "1 Month" ? "Monthly Single Game (No Swap)" : "Regular Weekly Rental",
+        ...(selectedUpcomingPrice() !== null ? {price: selectedUpcomingPrice()} : {})
       });
       form.replaceChildren();
       const success = document.createElement("p");
