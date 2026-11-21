@@ -1964,12 +1964,21 @@ function openRentplayUpcomingForm(game, availableDateLabel) {
       const success = document.createElement("p");
       success.style.cssText = "color:#70f5b1;line-height:1.7;font-weight:700";
       success.textContent = "✅ Successfully added to the waiting list! Your request is saved under RENTPLAY PH. This is not yet a confirmed rental.";
+      const notice = document.createElement("p");
+      notice.style.cssText = "color:#ffe0a1;line-height:1.65;font-size:13px;margin:0";
+      notice.textContent = "⚠ IMPORTANT: Please message our official Facebook Page to confirm your interest in " + game.title + ". Your waiting-list request is saved, but this does not guarantee a slot or confirm a reservation. Availability and final pricing must be confirmed by our team.";
+      const facebook = document.createElement("a");
+      facebook.href = CONFIG.facebookPage;
+      facebook.target = "_blank";
+      facebook.rel = "noopener noreferrer";
+      facebook.textContent = "💬 Message Us on Facebook ↗";
+      facebook.style.cssText = "display:block;text-align:center;background:#d92738;color:white;text-decoration:none;border-radius:9px;padding:13px;font-weight:800";
       const done = document.createElement("button");
       done.type = "button";
-      done.textContent = "Done";
-      done.style.cssText = "background:#d92738;color:white;border:0;border-radius:9px;padding:12px 24px;cursor:pointer";
+      done.textContent = "Close";
+      done.style.cssText = "background:#252b39;color:white;border:1px solid #555d70;border-radius:9px;padding:12px 24px;cursor:pointer";
       done.addEventListener("click",dismiss);
-      form.append(success,done);
+      form.append(success,notice,facebook,done);
     } catch (err) {
       console.error("Upcoming waiting-list submission failed",err);
       feedback.style.color = "#ff9eaa";
