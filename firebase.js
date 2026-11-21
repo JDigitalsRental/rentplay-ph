@@ -1,4 +1,4 @@
-/* RENTPLAY PH — shared JDigitalsRental catalog + two-way waiting-list submissions */
+/* RENTPLAY PH — shared JDigitalsRental catalog + source-tagged waiting list */
 "use strict";
 window.RENTPLAY_FIREBASE = {
   enabled: true, mode: "live", projectId: "jdigitalrental",
@@ -24,7 +24,7 @@ window.RENTPLAY_FIREBASE = {
           if (!gameId || !gameName || !customerName || !["Trophy", "Non-Trophy"].includes(accountType)) throw new Error("Invalid request");
           const reservation = doc(collection(db, "waitingList"));
           const id = reservation.id;
-          const data = {gameId, gameName, customerName, accountType, rentalPeriod, rentalPlan, status: "waiting", createdAt: serverTimestamp()};
+          const data = {gameId, gameName, customerName, accountType, rentalPeriod, rentalPlan, status: "waiting", source: "rentplay-ph", createdAt: serverTimestamp()};
           if (typeof price === "number" && Number.isFinite(price) && price >= 0) data.price = price;
           const batch = writeBatch(db);
           batch.set(reservation, data);
